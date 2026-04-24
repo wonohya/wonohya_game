@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Booth</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:100vw;height:100vh;overflow:hidden;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;user-select:none;background:#c8c8c8}
+
+#menubar{height:22px;background:linear-gradient(to bottom,#ebebeb,#d0d0d0);border-bottom:1px solid #a8a8a8;display:flex;align-items:center;padding:0 10px;gap:14px;position:relative;z-index:9999}
+.mi{font-size:12px;font-weight:500;color:#111;cursor:default;padding:1px 5px;border-radius:3px}
+.mi:hover{background:rgba(0,0,0,.09)}
+.mi-bold{font-weight:700}
+.menu-r{margin-left:auto;display:flex;align-items:center;gap:10px}
+.menu-time{font-size:12px;color:#111}
+
+#desktop{width:100%;height:calc(100vh - 22px);position:relative;overflow:hidden;background:#c8c8c8}
+
+/* ── BASE WINDOW ── */
+.win{
+  position:absolute;border-radius:6px;border:1px solid #888;
+  box-shadow:0 5px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.6);
+  overflow:hidden;background:white;
+}
+.titlebar{
+  height:22px;background:linear-gradient(to bottom,#e2e2e2,#c8c8c8);
+  display:flex;align-items:center;padding:0 7px;
+  border-bottom:1px solid #999;cursor:grab;position:relative;flex-shrink:0;
+}
+.titlebar:active{cursor:grabbing}
+.win-title{position:absolute;left:50%;transform:translateX(-50%);font-size:11px;font-weight:500;color:#333;white-space:nowrap;pointer-events:none}
+.tls{display:flex;gap:5px;align-items:center}
+.tl{width:11px;height:11px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tl-r{background:#ff5f57;border:1px solid #e0433d}
+.tl-y{background:#ffbd2e;border:1px solid #e0a021}
+.tl-g{background:#28c840;border:1px solid #1aab2a}
+.tli{opacity:0;transition:opacity .1s;pointer-events:none}
+.tls:hover .tli{opacity:1}
+.tb-off{background:linear-gradient(to bottom,#f0f0f0,#e0e0e0)}
+.tb-off .tl-r,.tb-off .tl-y,.tb-off .tl-g{background:#d0d0d0;border-color:#bbb}
+
+/* resize handles on all 8 edges */
+.rhandle{position:absolute;z-index:20}
+.rhandle.n {top:-3px;left:8px;right:8px;height:6px;cursor:n-resize}
+.rhandle.s {bottom:-3px;left:8px;right:8px;height:6px;cursor:s-resize}
+.rhandle.e {top:8px;right:-3px;bottom:8px;width:6px;cursor:e-resize}
+.rhandle.w {top:8px;left:-3px;bottom:8px;width:6px;cursor:w-resize}
+.rhandle.ne{top:-4px;right:-4px;width:10px;height:10px;cursor:ne-resize}
+.rhandle.nw{top:-4px;left:-4px;width:10px;height:10px;cursor:nw-resize}
+.rhandle.se{bottom:-4px;right:-4px;width:10px;height:10px;cursor:se-resize}
+.rhandle.sw{bottom:-4px;left:-4px;width:10px;height:10px;cursor:sw-resize}
+/* corner grip dots */
+.rhandle.se::after{content:'';position:absolute;right:3px;bottom:3px;width:7px;height:7px;background:radial-gradient(circle,#aaa 1.5px,transparent 1.5px) 0 0/3px 3px repeat;opacity:.6}
+
+/* FINDER SIDEBAR */
+#fsbar{position:absolute;left:0;top:0;width:153px;height:100%;background:#e0e0e0;border-right:1px solid #aaa;z-index:10;display:flex;flex-direction:column}
+.fsb{flex:1;overflow-y:scroll;padding:5px 0}
+.fsb::-webkit-scrollbar{width:7px}
+.fsb::-webkit-scrollbar-track{background:#d4d4d4}
+.fsb::-webkit-scrollbar-thumb{background:#aaa;border-radius:3px}
+.fsec{font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.7px;padding:6px 9px 2px}
+.frow{display:flex;align-items:center;gap:6px;padding:3px 9px;cursor:default;font-size:11px;color:#222}
+.frow:hover{background:rgba(0,0,0,.07)}
+.frow.act{background:#4a90d9;color:white}
+.frow-lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.fhighlight{margin:3px 6px;background:#4a90d9;border-radius:4px;padding:3px 7px;font-size:10px;color:white;display:flex;align-items:center;gap:5px}
+.ftag{display:flex;align-items:center;gap:6px;padding:3px 9px;font-size:11px;color:#222}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* BG FOLDER WINDOWS */
+.bgw{display:flex;flex-direction:column}
+.bgw-body{flex:1;background:#f2f2f2;padding:7px;display:flex;flex-wrap:wrap;gap:5px;align-content:flex-start;overflow:hidden}
+.fic{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:default;padding:3px;border-radius:4px;width:50px}
+.fic:hover{background:rgba(0,0,0,.07)}
+.fic span{font-size:9px;color:#222;text-align:center;line-height:1.2;word-break:break-word}
+
+/* MEMO WINDOW */
+.memo-toolbar{height:28px;background:linear-gradient(to bottom,#eee,#ddd);border-bottom:1px solid #ccc;display:flex;align-items:center;padding:0 8px;gap:6px;flex-shrink:0}
+.memo-tb-btn{background:linear-gradient(to bottom,#f8f8f8,#e4e4e4);border:1px solid #bbb;border-radius:3px;padding:2px 6px;font-size:10px;color:#333;cursor:pointer}
+.memo-sidebar{width:130px;background:#f5f5f5;border-right:1px solid #ddd;padding:6px 0;overflow-y:auto;flex-shrink:0}
+.mnrow{padding:5px 10px;cursor:default;border-bottom:1px solid #eee}
+.mnrow:hover{background:#e8e8e8}
+.mnrow.sel{background:#4a90d9;color:white}
+.mnrow .nt{font-weight:600;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mnrow .np{font-size:9px;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
+.memo-editor{flex:1;display:flex;flex-direction:column;background:white;min-width:0}
+.memo-etop{padding:10px 14px 6px;border-bottom:1px solid #f0f0f0}
+.memo-etop input{width:100%;border:none;outline:none;font-size:13px;font-weight:600;color:#111;background:transparent;font-family:inherit}
+.memo-earea{flex:1;overflow-y:auto}
+.memo-earea textarea{width:100%;height:100%;border:none;outline:none;resize:none;font-size:12px;color:#333;line-height:1.6;padding:8px 14px;font-family:inherit;background:transparent}
+
+/* ERROR DIALOGS */
+.edlg{
+  position:absolute;border-radius:8px;
+  border:1px solid #888;
+  box-shadow:0 10px 28px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.5);
+  background:linear-gradient(to bottom,#ebebeb,#d8d8d8);
+  padding:18px 18px 12px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  min-width:240px;cursor:default;
+}
+.edlg h3{font-size:12px;font-weight:700;color:#111;text-align:center}
+.edlg p{font-size:11px;color:#444;text-align:center;line-height:1.5;max-width:220px}
+.edlg-btns{display:flex;gap:8px;margin-top:4px}
+.ebtn{background:linear-gradient(to bottom,#f0f0f0,#d8d8d8);border:1px solid #a0a0a0;border-radius:5px;padding:4px 14px;font-size:11px;font-weight:500;color:#111;cursor:pointer;min-width:56px;text-align:center}
+.ebtn:hover{background:linear-gradient(to bottom,#f8f8f8,#e4e4e4)}
+.ebtn.primary{background:linear-gradient(to bottom,#4a90d9,#3478c8);color:white;border-color:#2a68b0}
+.ebtn.primary:hover{background:linear-gradient(to bottom,#5aa0e9,#4488d8)}
+
+/* DESKTOP ICONS */
+.di{position:absolute;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:default;padding:5px;border-radius:4px;width:64px;z-index:5}
+.di:hover{background:rgba(0,0,0,.08)}
+.di span{font-size:10px;color:#111;text-align:center;text-shadow:0 1px 0 rgba(255,255,255,.5);word-break:break-word;line-height:1.2}
+
+/* PHOTO BOOTH */
+#pb{display:flex;flex-direction:column;z-index:100}
+.pb-vp{position:relative;background:#111;overflow:hidden;flex-shrink:0}
+#camFeed{width:100%;height:100%;object-fit:cover;display:none;transform:scaleX(-1);position:absolute;top:0;left:0}
+#upPhoto{width:100%;height:100%;object-fit:cover;display:none;position:absolute;top:0;left:0}
+.pb-ovl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.5);color:white;cursor:pointer;z-index:2}
+.pb-ovl.h{display:none}
+.ovl-big{font-size:26px;font-weight:900;letter-spacing:-.5px;line-height:1}
+.ovl-sub{font-size:12px;letter-spacing:2.5px;margin-bottom:14px;opacity:.85;font-weight:300;margin-top:2px}
+.ovl-hint{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;margin-top:8px;margin-bottom:3px}
+.ovl-sub2{font-size:9px;opacity:.5}
+.live-badge{position:absolute;top:8px;right:10px;background:rgba(0,0,0,.5);color:white;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;display:none;align-items:center;gap:4px;z-index:3}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#4cd137;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.flash{position:absolute;inset:0;background:white;opacity:0;pointer-events:none;z-index:4;transition:opacity .06s}
+.flash.on{opacity:1;transition:opacity 0s}
+.pb-ab{height:50px;background:linear-gradient(to bottom,#d2d2d2,#c0c0c0);border-top:1px solid #a8a8a8;display:flex;align-items:center;justify-content:space-between;padding:0 18px;flex-shrink:0}
+.pb-ab-btn{background:linear-gradient(to bottom,#f0f0f0,#d8d8d8);border:1px solid #aaa;border-radius:5px;padding:3px 10px;font-size:10px;font-weight:500;color:#222;cursor:pointer;display:flex;align-items:center;gap:4px;min-width:64px;justify-content:center}
+.pb-ab-btn:hover{background:linear-gradient(to bottom,#f8f8f8,#e4e4e4)}
+.pb-shutter{width:40px;height:40px;background:radial-gradient(circle at 38% 32%,#e8e8e8 0%,#b2b2b2 55%,#909090 100%);border:2px solid #808080;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 2px 5px rgba(0,0,0,.35),inset 0 1px 1px rgba(255,255,255,.55);transition:transform .08s}
+.pb-shutter:hover{transform:scale(1.07)}
+.pb-shutter:active{transform:scale(.91)}
+.pb-film-wrap{display:flex;align-items:center;height:78px;background:#b4b4b4;border-top:1px solid #a0a0a0;flex-shrink:0;padding:0 0 0 8px}
+.pb-film{flex:1;display:flex;align-items:center;gap:4px;overflow-x:auto;height:100%}
+.pb-film::-webkit-scrollbar{height:3px}
+.pb-film::-webkit-scrollbar-thumb{background:#999;border-radius:2px}
+.sthumb{flex-shrink:0;width:80px;height:56px;border-radius:3px;overflow:hidden;border:1.5px solid #909090;cursor:pointer;background:#333}
+.sthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.sthumb:hover{border-color:#5599dd}
+.sthumb.sel{border:2px solid #4a90d9}
+.sadd{flex-shrink:0;width:80px;height:56px;border-radius:3px;border:2px dashed #999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:rgba(0,0,0,.05);gap:2px}
+.sadd:hover{background:rgba(0,0,0,.1)}
+.sadd span{font-size:8px;font-weight:700;color:#777}
+.film-right{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 6px 4px;height:100%;flex-shrink:0;gap:4px}
+.film-label{font-size:9px;color:#666;white-space:nowrap}
+.film-vscroll{width:10px;height:52px;background:#c4c4c4;border:1px solid #aaa;border-radius:3px;position:relative}
+.film-vscroll-thumb{width:8px;height:18px;background:#999;border-radius:3px;position:absolute;top:5px;left:0}
+canvas{display:none}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+
+<!-- MENUBAR -->
+<div id="menubar">
+  <svg width="13" height="15" viewBox="0 0 13 15" fill="none"><path d="M9.2 0c.1.8-.22 1.7-.72 2.25-.52.6-1.3 1.02-2 .98-.09-.8.23-1.65.75-2.2C7.8.47 8.65.06 9.2 0zM11.7 4.95c-.95-.52-2-.47-2.78-.05-.6.28-1.12.28-1.72-.02-.95-.42-2-.38-2.9.24C2.88 6.04 2.36 8.38 3.3 10.8c.6 1.55 1.45 3 2.42 3 .48 0 .94-.28 1.55-.28s1.05.28 1.6.28c.95 0 1.78-1.45 2.4-3 .42-1.05.6-2.08.5-3-.42-.2-.84-.52-.98-1.6z" fill="#111"/></svg>
+  <span class="mi mi-bold">Go</span><span class="mi">Window</span><span class="mi">Help</span>
+  <div class="menu-r">
+    <svg width="15" height="12" viewBox="0 0 15 12" fill="none"><path d="M7.5 9.2a1.4 1.4 0 100 2.8 1.4 1.4 0 000-2.8z" fill="#111"/><path d="M4.8 6.8a3.8 3.8 0 015.4 0" stroke="#111" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M2.1 4.2a7.4 7.4 0 0110.8 0" stroke="#555" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M0 1.8A10.8 10.8 0 0115 1.8" stroke="#999" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>
+    <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y="1" width="18" height="9" rx="2" stroke="#555" stroke-width="1"/><rect x="1.5" y="2" width="13" height="7" rx="1.5" fill="#333"/><path d="M19.5 4v3a1.5 1.5 0 000-3z" fill="#555"/></svg>
+    <span class="menu-time" id="mTime">9:41 AM</span>
+  </div>
+</div>
+
+<div id="desktop">
+
+<!-- FINDER SIDEBAR -->
+<div id="fsbar">
+  <div class="titlebar" style="border-radius:0;cursor:default">
+    <div class="tls"><div class="tl tl-r"></div><div class="tl tl-y"></div><div class="tl tl-g"></div></div>
+  </div>
+  <div class="fsb">
+    <div class="fsec">Favorites</div>
+    <div class="frow act"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><rect x=".5" y="2" width="12" height="8.5" rx="1.2" stroke="white" stroke-width="1" fill="rgba(255,255,255,.15)"/><path d="M.5 4.5h12" stroke="white" stroke-width=".7" opacity=".4"/><rect x="2.5" y=".5" width="7" height="3" rx="1" stroke="white" stroke-width="1" fill="rgba(255,255,255,.2)"/></svg><span class="frow-lbl">AVEN PAPER</span></div>
+    <div class="frow" style="padding-left:16px;color:#666"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#888" stroke-width="1" fill="none"/><path d="M5 3v2l1.5 1.5" stroke="#888" stroke-width="1" stroke-linecap="round"/></svg><span class="frow-lbl" style="font-size:10px;font-style:italic">VOICE</span></div>
+    <div class="frow"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 3.5a1.5 1.5 0 011.5-1.5h3L7 3.8H11.5a1 1 0 011 1v4.7a1.5 1.5 0 01-1.5 1.5H2.5A1.5 1.5 0 011 9.5V3.5z" fill="#4a90d9"/></svg><span class="frow-lbl">LINDA Clinicc...</span></div>
+    <div class="fhighlight"><svg width="11" height="10" viewBox="0 0 11 10" fill="none"><path d="M.8 3a1.2 1.2 0 011.2-1.2h2.5l1.2 1.6H10a.8.8 0 01.8.8v4a1.2 1.2 0 01-1.2 1.2H2A1.2 1.2 0 01.8 8.2V3z" fill="rgba(255,255,255,.9)"/></svg>LINDA Clinicc...</div>
+    <div class="frow"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 3.5a1.5 1.5 0 011.5-1.5h3L7 3.8H11.5a1 1 0 011 1v4.7a1.5 1.5 0 01-1.5 1.5H2.5A1.5 1.5 0 011 9.5V3.5z" fill="#e8a020"/></svg><span class="frow-lbl">WAYFAIR</span></div>
+    <div class="frow"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 3.5a1.5 1.5 0 011.5-1.5h3L7 3.8H11.5a1 1 0 011 1v4.7a1.5 1.5 0 01-1.5 1.5H2.5A1.5 1.5 0 011 9.5V3.5z" fill="#4a90d9"/></svg><span class="frow-lbl">iCloud Drive</span></div>
+    <div class="frow"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 3.5a1.5 1.5 0 011.5-1.5h3L7 3.8H11.5a1 1 0 011 1v4.7a1.5 1.5 0 01-1.5 1.5H2.5A1.5 1.5 0 011 9.5V3.5z" fill="#4a90d9"/></svg><span class="frow-lbl">Applications</span></div>
+    <div class="frow"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 3.5a1.5 1.5 0 011.5-1.5h3L7 3.8H11.5a1 1 0 011 1v4.7a1.5 1.5 0 01-1.5 1.5H2.5A1.5 1.5 0 011 9.5V3.5z" fill="#4a90d9"/></svg><span class="frow-lbl">Desktop</span></div>
+    <div class="frow"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 3.5a1.5 1.5 0 011.5-1.5h3L7 3.8H11.5a1 1 0 011 1v4.7a1.5 1.5 0 01-1.5 1.5H2.5A1.5 1.5 0 011 9.5V3.5z" fill="#4a90d9"/></svg><span class="frow-lbl">Documents</span></div>
+    <div class="frow"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 3.5a1.5 1.5 0 011.5-1.5h3L7 3.8H11.5a1 1 0 011 1v4.7a1.5 1.5 0 01-1.5 1.5H2.5A1.5 1.5 0 011 9.5V3.5z" fill="#30a060"/></svg><span class="frow-lbl">Downloads</span></div>
+    <div class="frow"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 3.5a1.5 1.5 0 011.5-1.5h3L7 3.8H11.5a1 1 0 011 1v4.7a1.5 1.5 0 01-1.5 1.5H2.5A1.5 1.5 0 011 9.5V3.5z" fill="#4a90d9"/></svg><span class="frow-lbl">Pictures</span></div>
+    <div class="fsec" style="margin-top:6px">Locations</div>
+    <div class="frow"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><rect x=".5" y="2.5" width="12" height="8" rx="1.2" stroke="#666" stroke-width="1" fill="none"/><path d="M.5 5h12" stroke="#666" stroke-width=".7"/><path d="M3.5 1.5v2M9.5 1.5v2" stroke="#666" stroke-width="1" stroke-linecap="round"/></svg><span class="frow-lbl">Macintosh HD</span></div>
+    <div class="frow"><svg width="13" height="11" viewBox="0 0 13 11" fill="none"><path d="M1.5 9V4.5L6.5 1.5 11.5 4.5V9L6.5 11 1.5 9z" stroke="#666" stroke-width="1" fill="none"/><circle cx="6.5" cy="6" r="1.5" stroke="#666" stroke-width="1" fill="none"/></svg><span class="frow-lbl">Network</span></div>
+    <div class="fsec" style="margin-top:6px">Tags</div>
+    <div class="ftag"><div class="dot" style="background:#e84040"></div>Red</div>
+    <div class="ftag"><div class="dot" style="background:#f0a020"></div>Orange</div>
+    <div class="ftag"><div class="dot" style="background:#28c840"></div>Green</div>
+    <div class="ftag"><div class="dot" style="background:#4a90d9"></div>Blue</div>
+    <div class="ftag"><div class="dot" style="background:#9b59b6"></div>Purple</div>
+  </div>
+</div>
+
+<!-- ═══ BACKGROUND CLUTTER ═══ -->
+
+<!-- Pictures -->
+<div class="win bgw" id="bgA" style="right:8px;top:10px;width:152px;height:168px;z-index:25">
+  <div class="titlebar tb-off" id="bgAT"><div class="tls"><div class="tl tl-r" onclick="this.closest('.win').style.display='none'"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#8B0000" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tl tl-y"></div><div class="tl tl-g"></div></div><span class="win-title">Pictures</span></div>
+  <div class="bgw-body">
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#4a90d9"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#5aa3e8"/></svg><span>2024</span></div>
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#4a90d9"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#5aa3e8"/></svg><span>2023</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#e84040"/><rect x="4" y="12" width="22" height="1.5" rx=".75" fill="#ccc"/><rect x="4" y="16" width="14" height="1.5" rx=".75" fill="#ddd"/></svg><span>Shoot.pdf</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#9b59b6"/><rect x="4" y="12" width="22" height="1.5" rx=".75" fill="#ccc"/></svg><span>Edit.psd</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#1e7ae0"/><rect x="4" y="12" width="22" height="1.5" rx=".75" fill="#ccc"/></svg><span>Cover.ai</span></div>
+  </div>
+</div>
+
+<!-- Downloads (behind A) -->
+<div class="win bgw" id="bgB" style="right:24px;top:26px;width:136px;height:150px;z-index:20">
+  <div class="titlebar tb-off" id="bgBT"><div class="tls"><div class="tl tl-r" onclick="this.closest('.win').style.display='none'"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#8B0000" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tl tl-y"></div><div class="tl tl-g"></div></div><span class="win-title">Downloads</span></div>
+  <div class="bgw-body">
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#30a060"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#40c070"/></svg><span>Projects</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#28c840"/></svg><span>Data.xlsx</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#555"/></svg><span>App.dmg</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#e8a020"/></svg><span>Font.zip</span></div>
+  </div>
+</div>
+
+<!-- Documents bottom-right -->
+<div class="win bgw" id="bgC" style="right:9px;bottom:6px;width:158px;height:152px;z-index:22">
+  <div class="titlebar tb-off" id="bgCT"><div class="tls"><div class="tl tl-r" onclick="this.closest('.win').style.display='none'"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#8B0000" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tl tl-y"></div><div class="tl tl-g"></div></div><span class="win-title">Documents</span></div>
+  <div class="bgw-body">
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#e84040"/><rect x="4" y="12" width="22" height="1.5" rx=".75" fill="#ccc"/><rect x="4" y="16" width="14" height="1.5" rx=".75" fill="#ddd"/></svg><span>Report.pdf</span></div>
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#4a90d9"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#5aa3e8"/></svg><span>Backup</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#1e7ae0"/></svg><span>Draft.doc</span></div>
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M18 2L2 14h4v14h9V20h6v8h9V14h4L18 2z" fill="#f0a020"/><rect x="13" y="20" width="10" height="8" rx="1" fill="#e8c060"/></svg><span>Home</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#555"/></svg><span>Archive.zip</span></div>
+  </div>
+</div>
+
+<!-- Applications bottom-left -->
+<div class="win bgw" id="bgD" style="left:158px;bottom:6px;width:145px;height:136px;z-index:18">
+  <div class="titlebar tb-off" id="bgDT"><div class="tls"><div class="tl tl-r" onclick="this.closest('.win').style.display='none'"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#8B0000" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tl tl-y"></div><div class="tl tl-g"></div></div><span class="win-title">Applications</span></div>
+  <div class="bgw-body">
+    <div class="fic"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><rect width="30" height="30" rx="7" fill="#1c1c1c"/><circle cx="15" cy="15" r="8" fill="#2e2e2e"/><circle cx="15" cy="15" r="4.5" fill="#111"/><circle cx="17" cy="13" r="1" fill="rgba(255,255,255,.4)"/></svg><span>Photo Booth</span></div>
+    <div class="fic"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><rect width="30" height="30" rx="7" fill="#1e7ae0"/><rect x="4" y="8" width="22" height="14" rx="2" fill="white"/><path d="M4 10.5l11 8 11-8" stroke="#1e7ae0" stroke-width="1.2" fill="none"/></svg><span>Mail</span></div>
+    <div class="fic"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><rect width="30" height="30" rx="7" fill="#34c759"/><path d="M5 10a2.5 2.5 0 012.5-2.5h15a2.5 2.5 0 012.5 2.5v8a2.5 2.5 0 01-2.5 2.5H11l-6 4V10z" fill="white"/></svg><span>Messages</span></div>
+    <div class="fic"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><rect width="30" height="30" rx="7" fill="#ffe566"/><rect x="4" y="5" width="22" height="20" rx="1.5" fill="white"/><path d="M4 9h22" stroke="#e8c800" stroke-width=".6"/><rect x="7" y="12" width="10" height="1.2" rx=".6" fill="#888"/><rect x="7" y="15" width="7" height="1.2" rx=".6" fill="#aaa"/><rect x="7" y="18" width="9" height="1.2" rx=".6" fill="#aaa"/></svg><span>Notes</span></div>
+  </div>
+</div>
+
+<!-- Recents — right edge peeking -->
+<div class="win bgw" id="bgE" style="right:-2px;top:205px;width:124px;height:114px;z-index:16;border-right:none;border-radius:6px 0 0 6px">
+  <div class="titlebar tb-off" id="bgET"><div class="tls"><div class="tl tl-r" onclick="this.closest('.win').style.display='none'"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#8B0000" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tl tl-y"></div><div class="tl tl-g"></div></div><span class="win-title">Recents</span></div>
+  <div class="bgw-body">
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#9b59b6"/></svg><span>Sketch.ai</span></div>
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#9b59b6"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#b06fd0"/></svg><span>Design</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#e84040"/></svg><span>Ref.pdf</span></div>
+  </div>
+</div>
+
+<!-- Desktop folder — partial under PB -->
+<div class="win bgw" id="bgF" style="left:302px;top:6px;width:130px;height:98px;z-index:14">
+  <div class="titlebar tb-off" id="bgFT"><div class="tls"><div class="tl tl-r" onclick="this.closest('.win').style.display='none'"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#8B0000" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tl tl-y"></div><div class="tl tl-g"></div></div><span class="win-title">Desktop</span></div>
+  <div class="bgw-body">
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#4a90d9"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#5aa3e8"/></svg><span>Work</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#e8a020"/></svg><span>Brief.doc</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#28c840"/></svg><span>Sheet.csv</span></div>
+  </div>
+</div>
+
+<!-- Home folder window -->
+<div class="win bgw" id="bgG" style="left:166px;bottom:145px;width:148px;height:132px;z-index:17">
+  <div class="titlebar tb-off" id="bgGT"><div class="tls"><div class="tl tl-r" onclick="this.closest('.win').style.display='none'"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#8B0000" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tl tl-y"></div><div class="tl tl-g"></div></div><span class="win-title">Home</span></div>
+  <div class="bgw-body">
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#4a90d9"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#5aa3e8"/></svg><span>Desktop</span></div>
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#4a90d9"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#5aa3e8"/></svg><span>Movies</span></div>
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#4a90d9"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#5aa3e8"/></svg><span>Music</span></div>
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#30a060"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#40c070"/></svg><span>Public</span></div>
+  </div>
+</div>
+
+<!-- Creative / Design folder -->
+<div class="win bgw" id="bgH" style="left:315px;bottom:8px;width:138px;height:120px;z-index:19">
+  <div class="titlebar tb-off" id="bgHT"><div class="tls"><div class="tl tl-r" onclick="this.closest('.win').style.display='none'"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#8B0000" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="tl tl-y"></div><div class="tl tl-g"></div></div><span class="win-title">Creative</span></div>
+  <div class="bgw-body">
+    <div class="fic"><svg width="36" height="30" viewBox="0 0 36 30" fill="none"><path d="M2 6a2 2 0 012-2h7l2.5 3H33a1.5 1.5 0 011.5 1.5v17a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#9b59b6"/><path d="M2 11h32v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#b06fd0"/></svg><span>Mockups</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#1e7ae0"/></svg><span>Deck.pptx</span></div>
+    <div class="fic"><svg width="30" height="34" viewBox="0 0 30 34" fill="none"><rect x="1" y="1" width="28" height="32" rx="2" fill="white" stroke="#ccc" stroke-width="1"/><rect x="1" y="1" width="28" height="7" rx="2" fill="#9b59b6"/></svg><span>Logo.svg</span></div>
+  </div>
+</div>
+
+<!-- MEMO WINDOW -->
+<div class="win" id="memo" style="left:162px;top:168px;width:314px;height:284px;z-index:80;display:flex;flex-direction:column">
+  <div class="titlebar" id="memoBar">
+    <div class="tls">
+      <div class="tl tl-r" onclick="this.closest('.win').style.display='none'"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#8B0000" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="tl tl-y"><svg class="tli" width="6" height="2" viewBox="0 0 8 2"><path d="M1 1h6" stroke="#6B4800" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="tl tl-g"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M4 1v6M1 4h6" stroke="#005B1A" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+    </div>
+    <span class="win-title">Notes</span>
+  </div>
+  <div class="memo-toolbar">
+    <button class="memo-tb-btn" style="font-weight:700">B</button>
+    <button class="memo-tb-btn" style="font-style:italic">I</button>
+    <button class="memo-tb-btn" style="text-decoration:underline">U</button>
+    <div style="width:1px;height:14px;background:#ccc;margin:0 2px"></div>
+    <button class="memo-tb-btn"><svg width="10" height="9" viewBox="0 0 10 9" fill="none"><path d="M1 2h8M1 5h5M1 8h7" stroke="#555" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+    <button class="memo-tb-btn" style="margin-left:auto;font-size:9px">+ New</button>
+  </div>
+  <div style="flex:1;display:flex;min-height:0;overflow:hidden">
+    <div class="memo-sidebar">
+      <div class="mnrow sel" onclick="switchNote(0,this)"><div class="nt">Today's Tasks</div><div class="np">Check Photo Booth setup...</div></div>
+      <div class="mnrow" onclick="switchNote(1,this)"><div class="nt">Reel Ideas</div><div class="np">Vintage film mood...</div></div>
+      <div class="mnrow" onclick="switchNote(2,this)"><div class="nt">Shopping List</div><div class="np">Camera accessories...</div></div>
+      <div class="mnrow" onclick="switchNote(3,this)"><div class="nt">Shoot Notes</div><div class="np">Apr 16, 2024</div></div>
+      <div class="mnrow" onclick="switchNote(4,this)"><div class="nt">Untitled</div><div class="np">Empty note</div></div>
+    </div>
+    <div class="memo-editor">
+      <div class="memo-etop"><input id="memoTitle" value="Today's Tasks"/></div>
+      <div class="memo-earea"><textarea id="memoBody">• Check Photo Booth app settings
+• Plan reel shooting concept
+• Prepare background props
+• Check lighting setup
+
+Ideas:
+- Try B&W filter version too
+- Include red bag in composition
+- Compare sitting vs standing poses
+
+Note: Shoot tomorrow 10 AM</textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ERROR DIALOGS ═══ -->
+<div class="edlg" id="err1" style="left:204px;top:82px;z-index:500;transform:rotate(-2deg)">
+  <div style="display:flex;align-items:flex-start;gap:12px;width:100%">
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style="flex-shrink:0"><circle cx="18" cy="18" r="17" fill="#f5f5f5" stroke="#ccc" stroke-width="1"/><path d="M18 10v10" stroke="#e84040" stroke-width="2.5" stroke-linecap="round"/><circle cx="18" cy="25" r="2.2" fill="#e84040"/></svg>
+    <div><h3 style="margin-bottom:4px">"Photo Booth" quit unexpectedly.</h3><p>Click Reopen to launch it again. Click Report to see more details or send a report to Apple.</p></div>
+  </div>
+  <div class="edlg-btns">
+    <div class="ebtn" onclick="document.getElementById('err1').style.display='none'">Ignore</div>
+    <div class="ebtn" onclick="document.getElementById('err1').style.display='none'">Report...</div>
+    <div class="ebtn primary" onclick="document.getElementById('err1').style.display='none'">Reopen</div>
+  </div>
+</div>
+
+<div class="edlg" id="err2" style="left:428px;top:118px;z-index:499;transform:rotate(1.5deg)">
+  <div style="display:flex;align-items:flex-start;gap:12px;width:100%">
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style="flex-shrink:0"><circle cx="18" cy="18" r="17" fill="#fffbe6" stroke="#f0a020" stroke-width="1.5"/><path d="M18 10v10" stroke="#f0a020" stroke-width="2.5" stroke-linecap="round"/><circle cx="18" cy="25" r="2" fill="#f0a020"/></svg>
+    <div><h3 style="margin-bottom:4px">Your disk is almost full.</h3><p>Your startup disk has only 2.4 GB of storage remaining. Free up space to avoid problems.</p></div>
+  </div>
+  <div class="edlg-btns">
+    <div class="ebtn" onclick="document.getElementById('err2').style.display='none'">Later</div>
+    <div class="ebtn primary" onclick="document.getElementById('err2').style.display='none'">Manage...</div>
+  </div>
+</div>
+
+<div class="edlg" id="err3" style="left:160px;top:460px;z-index:498;transform:rotate(0.8deg);min-width:220px">
+  <div style="display:flex;align-items:flex-start;gap:10px;width:100%">
+    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" style="flex-shrink:0"><circle cx="15" cy="15" r="14" fill="#eef4ff" stroke="#4a90d9" stroke-width="1.2"/><path d="M15 9v7" stroke="#4a90d9" stroke-width="2" stroke-linecap="round"/><circle cx="15" cy="20" r="1.5" fill="#4a90d9"/></svg>
+    <div><h3 style="font-size:11px;margin-bottom:3px">Update Available</h3><p style="font-size:10px">Photo Booth 5.0 is ready to install. Restart required.</p></div>
+  </div>
+  <div class="edlg-btns">
+    <div class="ebtn" style="font-size:10px;padding:3px 10px" onclick="document.getElementById('err3').style.display='none'">Not Now</div>
+    <div class="ebtn primary" style="font-size:10px;padding:3px 10px" onclick="document.getElementById('err3').style.display='none'">Update</div>
+  </div>
+</div>
+
+<!-- ═══ DESKTOP ICONS ═══ -->
+<div class="di" style="right:168px;top:8px"><svg width="38" height="34" viewBox="0 0 38 34" fill="none"><rect x="1" y="1" width="36" height="32" rx="2" fill="white" stroke="#bbb" stroke-width="1"/><rect x="1" y="1" width="36" height="9" rx="2" fill="#e0e0e0"/><rect x="4" y="14" width="14" height="12" rx="1" fill="#e8e8e8" stroke="#d0d0d0" stroke-width=".5"/><rect x="21" y="14" width="13" height="4.5" rx=".5" fill="#ececec"/><rect x="21" y="21" width="9" height="4.5" rx=".5" fill="#ececec"/></svg><span>Untitled</span></div>
+<div class="di" style="right:168px;top:96px"><svg width="38" height="34" viewBox="0 0 38 34" fill="none"><rect x="1" y="1" width="36" height="32" rx="2" fill="white" stroke="#bbb" stroke-width="1"/><rect x="1" y="1" width="36" height="9" rx="2" fill="#e0e0e0"/><rect x="4" y="14" width="30" height="2" rx="1" fill="#e0e0e0"/><rect x="4" y="18" width="22" height="2" rx="1" fill="#ebebeb"/><rect x="4" y="22" width="26" height="2" rx="1" fill="#ebebeb"/></svg><span>Notes.txt</span></div>
+<div class="di" style="right:168px;top:184px"><svg width="40" height="36" viewBox="0 0 40 36" fill="none"><path d="M20 2L2 18h6v16h10V24h4v10h10V18h6L20 2z" fill="#f0a020" stroke="#c88800" stroke-width=".5"/><rect x="15" y="24" width="10" height="10" rx="1" fill="#e8c070"/></svg><span>Home</span></div>
+<div class="di" style="right:168px;top:272px"><svg width="36" height="38" viewBox="0 0 36 38" fill="none"><rect x="3" y="9" width="30" height="28" rx="2" fill="white" stroke="#bbb" stroke-width="1"/><path d="M3 9h30" stroke="#bbb" stroke-width="1"/><path d="M12 9V6.5a2 2 0 012-2h8a2 2 0 012 2V9" stroke="#bbb" stroke-width="1" stroke-linecap="round"/><path d="M12 18v10M18 18v10M24 18v10" stroke="#ccc" stroke-width="1.2" stroke-linecap="round"/><path d="M1 9h34" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"/></svg><span>Trash</span></div>
+<div class="di" style="right:168px;top:358px"><svg width="38" height="30" viewBox="0 0 38 30" fill="none"><path d="M2 6a2 2 0 012-2h8l3 3.5H35a1.5 1.5 0 011.5 1.5v16a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" fill="#e84040"/><path d="M2 11h35v14a2 2 0 01-2 2H4a2 2 0 01-2-2V11z" fill="#f06060"/></svg><span>Urgent</span></div>
+
+<!-- PHOTO BOOTH -->
+<div class="win" id="pb" style="left:150px;top:14px;width:596px;z-index:100;display:flex;flex-direction:column">
+  <div class="titlebar" id="pbBar">
+    <div class="tls">
+      <div class="tl tl-r" onclick="closePB()"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#8B0000" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="tl tl-y"><svg class="tli" width="6" height="2" viewBox="0 0 8 2"><path d="M1 1h6" stroke="#6B4800" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+      <div class="tl tl-g"><svg class="tli" width="6" height="6" viewBox="0 0 8 8"><path d="M4 1v6M1 4h6" stroke="#005B1A" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+    </div>
+    <span class="win-title">Photo Booth</span>
+  </div>
+  <div class="pb-vp" id="pbVp" style="height:390px">
+    <video id="camFeed" autoplay muted playsinline></video>
+    <img id="upPhoto" alt=""/>
+    <canvas id="cvs"></canvas>
+    <div class="pb-ovl" id="ovl" onclick="startCam()">
+      <div class="ovl-big">Photo Booth</div>
+      <div class="ovl-sub">Reels Style</div>
+      <svg width="48" height="38" viewBox="0 0 48 38" fill="none"><rect x="1.5" y="8.5" width="45" height="27" rx="3.5" stroke="rgba(255,255,255,.6)" stroke-width="1.7" fill="rgba(255,255,255,.07)"/><path d="M14 8.5V7.5a2.5 2.5 0 012.5-2.5h15a2.5 2.5 0 012.5 2.5v1" stroke="rgba(255,255,255,.6)" stroke-width="1.7" stroke-linecap="round"/><circle cx="24" cy="22" r="7.5" stroke="rgba(255,255,255,.6)" stroke-width="1.7" fill="rgba(255,255,255,.05)"/><circle cx="24" cy="22" r="4.2" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.4)" stroke-width="1.3"/><circle cx="29" cy="13.5" r="2.2" fill="rgba(255,255,255,.38)"/></svg>
+      <div class="ovl-hint">Click to start camera</div>
+      <div class="ovl-sub2">or upload a photo</div>
+    </div>
+    <div class="live-badge" id="lb"><div class="live-dot"></div>LIVE</div>
+    <div class="flash" id="flash"></div>
+  </div>
+  <div class="pb-ab">
+    <button class="pb-ab-btn" onclick="document.getElementById('fi').click()">
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 7V1M3.5 3L5.5 1l2 2" stroke="#333" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 8v1.5a.5.5 0 00.5.5h8a.5.5 0 00.5-.5V8" stroke="#333" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Upload
+    </button>
+    <div class="pb-shutter" onclick="capture()">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.8" stroke="#666" stroke-width="1.2"/><circle cx="10" cy="10" r="4.8" fill="#999" stroke="#777" stroke-width=".8"/><circle cx="10" cy="10" r="2.2" fill="#555"/><circle cx="11.8" cy="8.2" r=".9" fill="rgba(255,255,255,.5)"/></svg>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+      <button class="pb-ab-btn" id="camBtn" onclick="toggleCam()">
+        <svg width="13" height="11" viewBox="0 0 13 11" fill="none" id="camIco"><rect x=".8" y="2" width="11.4" height="8" rx="1.3" stroke="#333" stroke-width="1.1" fill="none"/><path d="M4.2 2V1.5a1 1 0 011-1h2.6a1 1 0 011 1V2" stroke="#333" stroke-width="1.1" stroke-linecap="round"/><circle cx="6.5" cy="6" r="1.9" stroke="#333" stroke-width="1.1" fill="none"/><circle cx="10" cy="3.5" r=".7" fill="#333"/></svg>
+        <span id="camLbl">Camera</span>
+      </button>
+      <button class="pb-ab-btn" id="screenshotBtn" onclick="captureDesktop()" style="font-size:9px;padding:2px 8px;min-width:64px;background:linear-gradient(to bottom,#e8f0fe,#d0dffc);border-color:#90a8e0;color:#1a3a8a">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x=".5" y=".5" width="9" height="9" rx="1.5" stroke="#1a3a8a" stroke-width="1"/><circle cx="5" cy="5" r="2.5" stroke="#1a3a8a" stroke-width="1" fill="#c0d0f8"/></svg>
+        Capture All
+      </button>
+    </div>
+  </div>
+  <div class="pb-film-wrap">
+    <div class="pb-film" id="film">
+      <div class="sthumb sel" onclick="selThumb(this)" data-src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200&q=60"><img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200&q=60" crossorigin="anonymous" alt="p1"></div>
+      <div class="sthumb" onclick="selThumb(this)" data-src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&q=60"><img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&q=60" crossorigin="anonymous" alt="p2"></div>
+      <div class="sthumb" onclick="selThumb(this)" data-src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=200&q=60"><img src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=200&q=60" crossorigin="anonymous" alt="p3"></div>
+      <div class="sthumb" onclick="selThumb(this)" data-src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=200&q=60"><img src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=200&q=60" crossorigin="anonymous" alt="p4"></div>
+      <div class="sthumb" onclick="selThumb(this)" data-src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=60"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=60" crossorigin="anonymous" alt="p5"></div>
+      <div class="sthumb" onclick="selThumb(this)" data-src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=200&q=60"><img src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=200&q=60" crossorigin="anonymous" alt="p6"></div>
+      <div class="sadd" onclick="document.getElementById('sfi').click()"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="#888" stroke-width="1.8" stroke-linecap="round"/></svg><span>ADD</span></div>
+    </div>
+    <div class="film-right">
+      <div class="film-vscroll"><div class="film-vscroll-thumb"></div></div>
+      <div class="film-label" id="slbl">6 photos and 0 movies</div>
+    </div>
+  </div>
+</div>
+
+</div>
+<input type="file" id="fi" accept="image/*" onchange="handleUp(event)">
+<input type="file" id="sfi" accept="image/*" onchange="handleSAdd(event)">
+
+<script>
+// Clock
+function tick(){const n=new Date();let h=n.getHours(),m=n.getMinutes(),ap=h>=12?'PM':'AM';h=h%12||12;document.getElementById('mTime').textContent=h+':'+(m<10?'0':'')+m+' '+ap;}
+tick();setInterval(tick,1000);
+
+// Z-index
+let zTop=200;
+function bringFront(id){const el=document.getElementById(id);if(el)el.style.zIndex=++zTop;}
+const ALL_WINS=['pb','bgA','bgB','bgC','bgD','bgE','bgF','bgG','bgH','memo','err1','err2','err3'];
+ALL_WINS.forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('mousedown',()=>bringFront(id));});
+
+// ── UNIVERSAL DRAG ──
+function makeDrag(winEl, handleEl){
+  if(!winEl||!handleEl)return;
+  let mx=0,my=0;
+  handleEl.addEventListener('mousedown',e=>{
+    if(e.target.closest('.tl'))return;
+    e.preventDefault(); e.stopPropagation();
+    mx=e.clientX; my=e.clientY;
+    bringFront(winEl.id);
+    const mvFn=e2=>{
+      const dx=e2.clientX-mx, dy=e2.clientY-my; mx=e2.clientX; my=e2.clientY;
+      const r=winEl.getBoundingClientRect(), dr=document.getElementById('desktop').getBoundingClientRect();
+      let l=r.left-dr.left+dx, t=r.top-dr.top+dy;
+      l=Math.max(-r.width+60,Math.min(l,dr.width-60));
+      t=Math.max(0,Math.min(t,dr.height-22));
+      winEl.style.left=l+'px'; winEl.style.top=t+'px';
+      winEl.style.right='auto'; winEl.style.bottom='auto';
+    };
+    document.addEventListener('mousemove',mvFn);
+    document.addEventListener('mouseup',()=>document.removeEventListener('mousemove',mvFn),{once:true});
+  });
+}
+
+// ── UNIVERSAL RESIZE (all 8 directions) ──
+function makeResize(winEl, minW=120, minH=80){
+  if(!winEl)return;
+  const dirs=['n','s','e','w','ne','nw','se','sw'];
+  dirs.forEach(d=>{
+    const h=document.createElement('div');
+    h.className='rhandle '+d;
+    winEl.appendChild(h);
+    let sx=0,sy=0,sw=0,sh=0,sl=0,st=0;
+    h.addEventListener('mousedown',e=>{
+      e.preventDefault(); e.stopPropagation();
+      bringFront(winEl.id);
+      sx=e.clientX; sy=e.clientY;
+      const r=winEl.getBoundingClientRect();
+      const dr=document.getElementById('desktop').getBoundingClientRect();
+      sw=winEl.offsetWidth; sh=winEl.offsetHeight;
+      sl=r.left-dr.left; st=r.top-dr.top;
+      const mvFn=e2=>{
+        const dx=e2.clientX-sx, dy=e2.clientY-sy;
+        let nl=sl,nt=st,nw=sw,nh=sh;
+        if(d.includes('e')) nw=Math.max(minW,sw+dx);
+        if(d.includes('s')) nh=Math.max(minH,sh+dy);
+        if(d.includes('w')){nw=Math.max(minW,sw-dx);nl=sl+sw-nw;}
+        if(d.includes('n')){nh=Math.max(minH,sh-dy);nt=st+sh-nh;}
+        winEl.style.width=nw+'px'; winEl.style.height=nh+'px';
+        winEl.style.left=nl+'px'; winEl.style.top=nt+'px';
+        winEl.style.right='auto'; winEl.style.bottom='auto';
+        // Photo Booth viewport tracks height
+        if(winEl.id==='pb'){
+          const fixed=22+50+78; // titlebar+actionbar+filmstrip
+          document.getElementById('pbVp').style.height=Math.max(100,nh-fixed)+'px';
+        }
+      };
+      document.addEventListener('mousemove',mvFn);
+      document.addEventListener('mouseup',()=>document.removeEventListener('mousemove',mvFn),{once:true});
+    });
+  });
+}
+
+// ── WIRE UP DRAG + RESIZE ──
+const WIN_CFG=[
+  ['pb','pbBar'],['bgA','bgAT'],['bgB','bgBT'],['bgC','bgCT'],
+  ['bgD','bgDT'],['bgE','bgET'],['bgF','bgFT'],['bgG','bgGT'],
+  ['bgH','bgHT'],['memo','memoBar']
+];
+WIN_CFG.forEach(([id,bar])=>{
+  const el=document.getElementById(id);
+  makeDrag(el,document.getElementById(bar));
+  makeResize(el);
+});
+
+// Error dialogs — drag only (they're fixed size)
+['err1','err2','err3'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  let mx=0,my=0;
+  el.addEventListener('mousedown',e=>{
+    if(e.target.closest('.ebtn'))return;
+    e.preventDefault();
+    mx=e.clientX; my=e.clientY;
+    bringFront(id);
+    const mvFn=e2=>{
+      const dx=e2.clientX-mx, dy=e2.clientY-my; mx=e2.clientX; my=e2.clientY;
+      const r=el.getBoundingClientRect(), dr=document.getElementById('desktop').getBoundingClientRect();
+      let l=r.left-dr.left+dx, t=r.top-dr.top+dy;
+      l=Math.max(0,Math.min(l,dr.width-r.width));
+      t=Math.max(0,Math.min(t,dr.height-r.height));
+      el.style.left=l+'px'; el.style.top=t+'px';
+    };
+    document.addEventListener('mousemove',mvFn);
+    document.addEventListener('mouseup',()=>document.removeEventListener('mousemove',mvFn),{once:true});
+  });
+});
+
+// ── PHOTO BOOTH ──
+let camStream=null,camOn=false,total=6;
+const vid=document.getElementById('camFeed'),upImg=document.getElementById('upPhoto'),
+      ovl=document.getElementById('ovl'),lbEl=document.getElementById('lb'),
+      flashEl=document.getElementById('flash'),filmEl=document.getElementById('film');
+
+// Central display controller — only one layer visible at a time
+function showLayer(what){ // 'cam' | 'image' | 'none'
+  vid.style.display   = what==='cam'   ? 'block' : 'none';
+  upImg.style.display = what==='image' ? 'block' : 'none';
+  lbEl.style.display  = what==='cam'   ? 'flex'  : 'none';
+  what==='none' ? ovl.classList.remove('h') : ovl.classList.add('h');
+}
+
+async function startCam(){
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+    vid.srcObject=camStream;
+    showLayer('cam'); camOn=true;
+    document.getElementById('camLbl').textContent='Stop';
+    document.getElementById('camIco').innerHTML='<path d="M2 2l9 9M11 2L2 11" stroke="#c00" stroke-width="1.5" stroke-linecap="round"/>';
+  }catch(e){ showLayer('none'); alert('Please allow camera access.'); }
+}
+
+function stopCam(){
+  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
+  vid.srcObject=null; camOn=false;
+  document.getElementById('camLbl').textContent='Camera';
+  document.getElementById('camIco').innerHTML='<rect x=".8" y="2" width="11.4" height="8" rx="1.3" stroke="#333" stroke-width="1.1" fill="none"/><path d="M4.2 2V1.5a1 1 0 011-1h2.6a1 1 0 011 1V2" stroke="#333" stroke-width="1.1" stroke-linecap="round"/><circle cx="6.5" cy="6" r="1.9" stroke="#333" stroke-width="1.1" fill="none"/><circle cx="10" cy="3.5" r=".7" fill="#333"/>';
+  // after stopping, keep showing whichever image is loaded (if any)
+  if(upImg.src && upImg.src !== window.location.href) showLayer('image');
+  else showLayer('none');
+}
+
+function toggleCam(){ camOn ? stopCam() : startCam(); }
+
+// Upload to main viewport + add to filmstrip
+function handleUp(e){
+  const f=e.target.files[0]; if(!f) return;
+  if(camOn) stopCam();
+  const url=URL.createObjectURL(f);
+  upImg.src=url;
+  showLayer('image');
+  addThumb(url, true); // true = already shown, skip re-showing
+  e.target.value='';
+}
+
+function capture(){
+  if(!camOn && upImg.style.display==='none'){ startCam(); return; }
+  flashEl.classList.add('on'); setTimeout(()=>flashEl.classList.remove('on'),120);
+  const cv=document.getElementById('cvs');
+  const sw=camOn?(vid.videoWidth||640):(upImg.naturalWidth||640);
+  const sh=camOn?(vid.videoHeight||480):(upImg.naturalHeight||480);
+  cv.width=sw; cv.height=sh;
+  const ctx=cv.getContext('2d');
+  if(camOn){ ctx.translate(sw,0); ctx.scale(-1,1); ctx.drawImage(vid,0,0,sw,sh); }
+  else {
+    try{ ctx.drawImage(upImg,0,0,sw,sh); }
+    catch(err){ ctx.fillStyle='#333'; ctx.fillRect(0,0,sw,sh); }
+  }
+  addThumb(cv.toDataURL('image/jpeg',.92), camOn);
+}
+
+// addThumb: add url to filmstrip. alreadyShown=true skips re-loading into viewport
+function addThumb(src, alreadyShown){
+  total++;
+  const add=filmEl.querySelector('.sadd');
+  const t=document.createElement('div'); t.className='sthumb'; t.dataset.src=src;
+  t.onclick=function(){ selThumb(this); };
+  const img=document.createElement('img'); img.src=src; img.alt='photo';
+  t.appendChild(img);
+  filmEl.insertBefore(t,add);
+  document.getElementById('slbl').textContent=total+' photos and 0 movies';
+  filmEl.scrollLeft=filmEl.scrollWidth;
+  // mark as selected without re-triggering showLayer if already shown
+  document.querySelectorAll('.sthumb').forEach(x=>x.classList.remove('sel'));
+  t.classList.add('sel');
+  if(!alreadyShown){ upImg.src=src; showLayer('image'); }
+}
+
+// selThumb: clicking a thumbnail shows it in the main viewport
+function selThumb(el){
+  document.querySelectorAll('.sthumb').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel');
+  if(camOn) stopCam();
+  upImg.src=el.dataset.src;
+  showLayer('image');
+}
+
+function handleSAdd(e){ const f=e.target.files[0]; if(!f) return; addThumb(URL.createObjectURL(f), false); e.target.value=''; }
+function closePB(){ stopCam(); document.getElementById('pb').style.display='none'; }
+
+// ── SCREENSHOT: capture entire desktop ──
+async function captureDesktop(){
+  const btn=document.getElementById('screenshotBtn');
+  btn.textContent='Wait...'; btn.disabled=true;
+
+  // if camera is live, snapshot the current frame into a temp img
+  let snapImg=null;
+  if(camOn && vid.readyState>=2){
+    const vp=document.getElementById('pbVp');
+    const vpW=vp.offsetWidth, vpH=vp.offsetHeight;
+    const sw=vid.videoWidth||640, sh=vid.videoHeight||480;
+    // compute object-fit:cover crop area
+    const vidAR=sw/sh, vpAR=vpW/vpH;
+    let srcX=0,srcY=0,srcW=sw,srcH=sh;
+    if(vidAR>vpAR){ srcW=sh*vpAR; srcX=(sw-srcW)/2; }
+    else { srcH=sw/vpAR; srcY=(sh-srcH)/2; }
+    const sc=document.createElement('canvas'); sc.width=vpW; sc.height=vpH;
+    const sctx=sc.getContext('2d');
+    sctx.translate(vpW,0); sctx.scale(-1,1); // mirror to match display
+    sctx.drawImage(vid,srcX,srcY,srcW,srcH,0,0,vpW,vpH);
+    snapImg=document.createElement('img');
+    snapImg.src=sc.toDataURL('image/png');
+    snapImg.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;';
+    vid.style.display='none';
+    vp.appendChild(snapImg);
+  }
+
+  // swap textarea -> div so html2canvas renders full text
+  const ta=document.getElementById('memoBody');
+  const taDiv=document.createElement('div');
+  const cs=window.getComputedStyle(ta);
+  taDiv.style.cssText='position:absolute;top:'+ta.offsetTop+'px;left:'+ta.offsetLeft+'px;width:'+cs.width+';height:'+cs.height+';font-size:'+cs.fontSize+';font-family:'+cs.fontFamily+';line-height:'+cs.lineHeight+';color:'+cs.color+';background:'+cs.background+';padding:'+cs.padding+';overflow:hidden;white-space:pre-wrap;word-break:break-word;box-sizing:border-box;border:none;';
+  taDiv.textContent=ta.value;
+  ta.parentNode.insertBefore(taDiv, ta);
+  ta.style.visibility='hidden';
+
+  try{
+    if(!window.html2canvas){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload=res; s.onerror=rej; document.head.appendChild(s);
+      });
+    }
+    const canvas=await html2canvas(document.body,{
+      useCORS:true,allowTaint:true,
+      backgroundColor:'#c8c8c8',logging:false,
+      ignoreElements:el=>el.tagName==='INPUT'
+    });
+    const a=document.createElement('a');
+    a.download='photobooth-'+(Date.now())+'.png';
+    a.href=canvas.toDataURL('image/png'); a.click();
+  }catch(err){ alert('Screenshot failed. Try another browser.'); }
+
+  // restore textarea and video
+  taDiv.remove(); ta.style.visibility='';
+  if(snapImg){ snapImg.remove(); vid.style.display='block'; }
+  btn.textContent='Screenshot'; btn.disabled=false;
+}
+
+// ── MEMO NOTES ──
+const NOTES=[
+  {title:'Today\'s Tasks', body:'• Check Photo Booth app settings\n• Plan reel shooting concept\n• Prepare background props\n• Check lighting setup\n\nIdeas:\n- Try B&W filter version\n- Include red bag in frame\n- Compare sitting vs standing\n\nNote: Shoot tomorrow at 10 AM'},
+  {title:'Reel Ideas', body:'Reel concept ideas\n\n1. Vintage film mood\n2. Y2K aesthetic photo booth\n3. B&W + color mix\n\nReference accounts to check:\n@photoboothstyle\n@reelsmood\n@filmgrain.co'},
+  {title:'Shopping List', body:'Camera accessories\n- Reflector (white/silver)\n- Backdrop paper (beige, white)\n- Light stand\n\nOutfit list\n- Black dress\n- Denim set\n- White shirt\n\nProps\n- Red handbag\n- Vintage sunglasses'},
+  {title:'Shoot Notes', body:'Apr 16, 2024\n\nLocation: Studio B\nTime: 10:00 AM – 2:00 PM\nModel: TBD\n\nSettings:\n- ISO 400\n- f/2.8\n- 1/200s\n\nRemember to charge batteries!'},
+  {title:'Untitled', body:''}
+];
+function switchNote(i, rowEl){
+  document.querySelectorAll('.mnrow').forEach(r=>r.classList.remove('sel'));
+  rowEl.classList.add('sel');
+  document.getElementById('memoTitle').value=NOTES[i].title;
+  document.getElementById('memoBody').value=NOTES[i].body;
+}
+</script>
+</body>
+</html>
