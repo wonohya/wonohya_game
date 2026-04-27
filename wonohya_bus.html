@@ -194,6 +194,29 @@
     position:absolute;top:0;bottom:140px;left:0;right:0;
     display:none;flex-direction:row;z-index:3;pointer-events:none;
   }
+  /* 모바일 좌우 이동 버튼 */
+#mobileBtns{
+  position:absolute;bottom:160px;left:0;right:0;
+  display:none;justify-content:space-between;
+  padding:0 16px;z-index:6;pointer-events:none;
+}
+#mobileBtns button{
+  pointer-events:auto;
+  width:64px;height:64px;border-radius:50%;
+  background:rgba(10,10,25,.85);color:#fff;
+  border:2px solid rgba(255,255,255,.25);
+  font-size:28px;font-weight:900;
+  box-shadow:0 6px 20px rgba(0,0,0,.4);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .08s,background .15s;
+}
+#mobileBtns button:active{
+  transform:scale(.9);background:var(--yellow);color:#111;
+}
+@media(max-width:640px){
+  #mobileBtns.show{display:flex;}
+}
   .tap-zone{
     flex:1;pointer-events:auto;position:relative;
     display:flex;align-items:center;justify-content:center;
@@ -378,6 +401,10 @@
       <div class="tap-zone tap-left" id="tapLeft"></div>
       <div class="tap-zone tap-right" id="tapRight"></div>
     </div>
+    <div id="mobileBtns">
+      <button id="btnLeft" type="button">◀</button>
+      <button id="btnRight" type="button">▶</button>
+    </div>
     <div id="queuePanel">
       <div id="queueTitle"><span class="front">▲ 다음 내릴 사람</span> ← 하차 순서 →</div>
       <div id="queue"></div>
@@ -555,6 +582,7 @@ function startMoving(){
     hint.style.display='none';
   }
   document.getElementById('tapZones').style.display='flex';
+  document.getElementById('mobileBtns').classList.add('show');
   document.getElementById('nextStation').style.display='block';
   document.getElementById('bellOverlay').classList.remove('show');
   renderRouteBar();state.engineRef=A.engine();
@@ -580,6 +608,7 @@ function arriveAtStop(){
   state.phase='arriving';if(state.engineRef){state.engineRef.stop();state.engineRef=null;}A.brake();
   document.getElementById('moveHint').style.display='none';document.getElementById('nextStation').style.display='none';
   document.getElementById('tapZones').style.display='none';
+  document.getElementById('mobileBtns').classList.remove('show');
   const delay=800+Math.random()*700;state.perfectBellTime=performance.now()+delay;state.redBellShown=false;state.bellPressed=false;
   setTimeout(()=>{
     state.phase='waitBell';
@@ -604,20 +633,24 @@ window.addEventListener('keydown',e=>{
 
 /* 모바일: 좌/우 탭 + 정차 시 화면 어디든 벨 */
 function setupTouchZones(){
-  const tapL=document.getElementById('tapLeft');
-  const tapR=document.getElementById('tapRight');
-  const handler=(dir)=>(e)=>{
-    e.preventDefault();
-    if(state.phase==='moving'){
-      if(dir==='left')swapQueueBackward();else swapQueueForward();
-    }else if(state.phase==='waitBell'){
-      onBellPress(e);
-    }
+  const btnL=document.getElementById('btnLeft');
+  const btnR=document.getElementById('btnRight');
+  const makeHandler=(dir)=>{
+    let touched=false;
+    return (e)=>{
+      e.preventDefault();
+      if(e.type==='touchstart')touched=true;
+      if(e.type==='click'&&touched){return;} // iOS 중복 방지
+      if(state.phase==='moving'){
+        if(dir==='left')swapQueueBackward();else swapQueueForward();
+      }
+    };
   };
-  tapL.addEventListener('touchstart',handler('left'),{passive:false});
-  tapL.addEventListener('mousedown',handler('left'));
-  tapR.addEventListener('touchstart',handler('right'),{passive:false});
-  tapR.addEventListener('mousedown',handler('right'));
+  const hL=makeHandler('left'),hR=makeHandler('right');
+  btnL.addEventListener('touchstart',hL,{passive:false});
+  btnL.addEventListener('click',hL);
+  btnR.addEventListener('touchstart',hR,{passive:false});
+  btnR.addEventListener('click',hR);
 }
 setupTouchZones();
 function onBellPress(e){if(e)e.preventDefault();if(state.phase==='waitBell'&&!state.bellPressed)handleBellPress(false);}
