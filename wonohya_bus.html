@@ -195,27 +195,34 @@
     display:none;flex-direction:row;z-index:3;pointer-events:none;
   }
   /* 모바일 좌우 이동 버튼 */
+/* 모바일 좌우 이동 버튼 — 큐 패널 좌우에 배치 */
 #mobileBtns{
-  position:absolute;bottom:160px;left:0;right:0;
-  display:none;justify-content:space-between;
-  padding:0 16px;z-index:6;pointer-events:none;
+  display:none;
+  position:absolute;left:0;right:0;bottom:0;
+  z-index:7;pointer-events:none;
+  padding:0 8px 14px;
+  justify-content:space-between;align-items:flex-end;
+  height:140px;
 }
 #mobileBtns button{
   pointer-events:auto;
-  width:64px;height:64px;border-radius:50%;
-  background:rgba(10,10,25,.85);color:#fff;
-  border:2px solid rgba(255,255,255,.25);
-  font-size:28px;font-weight:900;
-  box-shadow:0 6px 20px rgba(0,0,0,.4);
+  width:54px;height:54px;border-radius:50%;
+  background:#111;color:#fff;
+  border:3px solid var(--yellow);
+  font-size:22px;font-weight:900;
+  box-shadow:0 4px 14px rgba(0,0,0,.45);
   cursor:pointer;-webkit-tap-highlight-color:transparent;
   display:flex;align-items:center;justify-content:center;
   transition:transform .08s,background .15s;
+  flex-shrink:0;
 }
 #mobileBtns button:active{
-  transform:scale(.9);background:var(--yellow);color:#111;
+  transform:scale(.88);background:var(--yellow);color:#111;
 }
 @media(max-width:640px){
   #mobileBtns.show{display:flex;}
+  /* 모바일에선 큐가 버튼 자리만큼 양쪽 안쪽으로 들어가도록 */
+  #queue{padding:0 60px 4px !important;}
 }
   .tap-zone{
     flex:1;pointer-events:auto;position:relative;
