@@ -197,28 +197,32 @@
   /* 모바일 좌우 이동 버튼 */
 /* 모바일 좌우 이동 버튼 — 큐 패널 좌우에 배치 */
 /* 큐 + 좌우 버튼 한 줄 배치 */
-#queueRow{
-  display:flex;align-items:center;gap:6px;
-  padding:0 8px;
-}
-#queueRow #queue{flex:1;min-width:0;}
-.mobileBtn{
-  display:none; /* 기본 숨김 — 모바일에서만 표시 */
-  flex-shrink:0;
-  width:48px;height:48px;border-radius:50%;
-  background:#111;color:#fff;
-  border:3px solid var(--yellow);
-  font-size:20px;font-weight:900;
-  box-shadow:0 4px 14px rgba(0,0,0,.45);
+/* 모바일 다음 승객 버튼 — SPACE 키와 동일 기능 */
+#nextPaxBtn{
+  display:none;
+  position:absolute;
+  bottom:170px;left:50%;transform:translateX(-50%);
+  z-index:8;
+  padding:14px 28px;border-radius:50px;
+  background:var(--yellow);color:#111;
+  border:none;
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:15px;font-weight:900;letter-spacing:.5px;
+  box-shadow:0 6px 20px rgba(245,158,11,.5),0 0 0 4px rgba(245,158,11,.2);
   cursor:pointer;-webkit-tap-highlight-color:transparent;
-  align-items:center;justify-content:center;
-  transition:transform .08s,background .15s;
+  align-items:center;justify-content:center;gap:8px;
+  animation:pulse-btn 1.5s infinite;
 }
-.mobileBtn:active{
-  transform:scale(.88);background:var(--yellow);color:#111;
+#nextPaxBtn:active{
+  transform:translateX(-50%) scale(.94);
+  box-shadow:0 3px 10px rgba(245,158,11,.4);
+}
+@keyframes pulse-btn{
+  0%,100%{box-shadow:0 6px 20px rgba(245,158,11,.5),0 0 0 4px rgba(245,158,11,.2);}
+  50%{box-shadow:0 6px 24px rgba(245,158,11,.7),0 0 0 10px rgba(245,158,11,.05);}
 }
 @media(max-width:640px){
-  .mobileBtn.show{display:flex;}
+  #nextPaxBtn.show{display:flex;}
 }
   .tap-zone{
     flex:1;pointer-events:auto;position:relative;
@@ -404,13 +408,10 @@
       <div class="tap-zone tap-left" id="tapLeft"></div>
       <div class="tap-zone tap-right" id="tapRight"></div>
     </div>
+    <button id="nextPaxBtn" type="button">▶ 다음 승객</button>
     <div id="queuePanel">
       <div id="queueTitle"><span class="front">▲ 다음 내릴 사람</span> ← 하차 순서 →</div>
-      <div id="queueRow">
-        <button id="btnLeft" class="mobileBtn" type="button">◀</button>
-        <div id="queue"></div>
-        <button id="btnRight" class="mobileBtn" type="button">▶</button>
-      </div>
+      <div id="queue"></div>
     </div>
     <div id="bellOverlay">
       <div id="bellSign">━━━━━━━</div>
@@ -485,13 +486,13 @@ const A=(()=>{
 /* ================= ROUTES ================= */
 const ROUTES={
   1:{no:1,color:'#3b82f6',cname:'rn1',title:'1노선',desc:'성수~왕십리~금호',info:'2024년 10월 첫 개통. 교통 사각지대였던 성수·금호를 잇다',theme:'seongsu',
-    stops:[{name:'서울숲복합문화체육센터',short:'서울숲',landmark:'forest',font:'6px'},{name:'성수문화복지회관',short:'성수문화',landmark:'cafe',font:'6px'},{name:'성동구청(왕십리역)',short:'성동구청',landmark:'office',font:'6px'},{name:'성동50플러스센터',short:'50플러스',landmark:'plaza',font:'9px'},{name:'금호1가동 주민센터',short:'금호1가',landmark:'residential',font:'9px'}]},
+    stops:[{name:'서울숲복합문화체육센터',short:'서울숲',landmark:'forest',font:'6px'},{name:'성수문화복지회관',short:'성수문화',landmark:'cafe',font:'6px'},{name:'성동구청(왕십리역)',short:'성동구청',landmark:'office',font:'6px'},{name:'성수역 스마트도서관',short:'스마트도서관',landmark:'library',font:'9px'},{name:'성수1가제2동 주민센터',short:'성수1가제2동',landmark:'residential',font:'9px'}]},
   2:{no:2,color:'#ef4444',cname:'rn2',title:'2노선',desc:'용답~마장~보건소',info:'2025년 5월 신설. 마장시장·보건소 등 생활시설을 잇다',theme:'market',
-    stops:[{name:'용답동 주민센터',short:'용답동',landmark:'residential',font:'6px'},{name:'마장축산물시장',short:'마장시장',landmark:'market',font:'6px'},{name:'사근동 주민센터',short:'사근동',landmark:'residential',font:'6px'},{name:'성동구청(왕십리역)',short:'성동구청',landmark:'office',font:'9px'},{name:'성동구 보건소',short:'보건소',landmark:'hospital',font:'9px'}]},
+    stops:[{name:'용답동 주민센터',short:'용답동',landmark:'residential',font:'6px'},{name:'사근동 마을활력소',short:'마을활력소',landmark:'market',font:'6px'},{name:'사근동 주민센터',short:'사근동',landmark:'residential',font:'6px'},{name:'성동구청(왕십리역)',short:'성동구청',landmark:'office',font:'9px'},{name:'용답동 노인복지관',short:'노인복지관',landmark:'residential',font:'9px'}]},
   3:{no:3,color:'#22c55e',cname:'rn3',title:'3노선',desc:'송정~왕십리',info:'지하철 없던 송정동을 왕십리역으로 연결',theme:'office',
-    stops:[{name:'송정동 공공복합청사',short:'송정동',landmark:'office',font:'6px'},{name:'송정 스마트헬스케어센터',short:'헬스케어',landmark:'hospital',font:'6px'},{name:'성동세무서',short:'세무서',landmark:'office',font:'px'},{name:'성동구청(왕십리역)',short:'성동구청',landmark:'subway',font:'9px'},{name:'소월아트홀',short:'소월아트홀',landmark:'plaza',font:'9px'}]},
+    stops:[{name:'송정동 공공복합청사',short:'송정동',landmark:'office',font:'6px'},{name:'송정 스마트헬스케어센터',short:'헬스케어',landmark:'hospital',font:'6px'},{name:'성동세무서',short:'세무서',landmark:'office',font:'px'},{name:'성동구청(왕십리역)',short:'성동구청',landmark:'subway',font:'9px'},{name:'성수2가제3동주민센터',short:'주민센터',landmark:'residential',font:'9px'}]},
   4:{no:4,color:'#8b5cf6',cname:'rn4',title:'4노선',desc:'왕십리~행당~옥수',info:'2025년 11월 신설. 언덕동네와 숲체험원까지',theme:'hill',
-    stops:[{name:'성동구청(왕십리역)',short:'성동구청',landmark:'office',font:'6px'},{name:'행당2동 주민센터',short:'행당2동',landmark:'residential',font:'6px'},{name:'금호4가동 주민센터',short:'금호4가',landmark:'residential',font:'9px'},{name:'옥수동 주민센터',short:'옥수동',landmark:'residential',font:'9px'},{name:'매봉산 유아숲체험원',short:'매봉산숲',landmark:'forest',font:'9px'}]},
+    stops:[{name:'성동구청(왕십리역)',short:'성동구청',landmark:'office',font:'6px'},{name:'행당2동 주민센터',short:'행당2동',landmark:'residential',font:'6px'},{name:'금호4가동 주민센터',short:'금호4가',landmark:'residential',font:'9px'},{name:'옥수동 주민센터',short:'옥수동',landmark:'residential',font:'9px'},{name:'성동아이사랑복합문화센터',short:'복합문화센터',landmark:'residential',font:'9px'}]},
 };
 
 const PAX_POOL=[
@@ -585,8 +586,8 @@ function startMoving(){
     hint.style.display='none';
   }
   document.getElementById('tapZones').style.display='flex';
-  document.getElementById('btnLeft').classList.add('show');
-  document.getElementById('btnRight').classList.add('show');
+  document.getElementById('nextPaxBtn').classList.add('show');
+  document.getElementById('nextPaxBtn').textContent='▶ 다음 승객';
   document.getElementById('nextStation').style.display='block';
   document.getElementById('bellOverlay').classList.remove('show');
   renderRouteBar();state.engineRef=A.engine();
@@ -612,8 +613,8 @@ function arriveAtStop(){
   state.phase='arriving';if(state.engineRef){state.engineRef.stop();state.engineRef=null;}A.brake();
   document.getElementById('moveHint').style.display='none';document.getElementById('nextStation').style.display='none';
   document.getElementById('tapZones').style.display='none';
-  document.getElementById('btnLeft').classList.remove('show');
-  document.getElementById('btnRight').classList.remove('show');
+// 정차 단계에서도 버튼 유지 — 텍스트만 "벨 누르기"로 변경
+  document.getElementById('nextPaxBtn').textContent='⏰ 벨 누르기';
   const delay=800+Math.random()*700;state.perfectBellTime=performance.now()+delay;state.redBellShown=false;state.bellPressed=false;
   setTimeout(()=>{
     state.phase='waitBell';
@@ -638,24 +639,19 @@ window.addEventListener('keydown',e=>{
 
 /* 모바일: 좌/우 탭 + 정차 시 화면 어디든 벨 */
 function setupTouchZones(){
-  const btnL=document.getElementById('btnLeft');
-  const btnR=document.getElementById('btnRight');
-  const makeHandler=(dir)=>{
-    let touched=false;
-    return (e)=>{
-      e.preventDefault();
-      if(e.type==='touchstart')touched=true;
-      if(e.type==='click'&&touched){return;} // iOS 중복 방지
-      if(state.phase==='moving'){
-        if(dir==='left')swapQueueBackward();else swapQueueForward();
-      }
-    };
+  const btn=document.getElementById('nextPaxBtn');
+  if(!btn)return;
+  let touched=false;
+  const handler=(e)=>{
+    e.preventDefault();
+    if(e.type==='touchstart')touched=true;
+    if(e.type==='click'&&touched){return;} // iOS 중복 방지
+    // SPACE 키와 동일한 동작
+    if(state.phase==='moving')swapQueueForward();
+    else if(state.phase==='waitBell')onBellPress(e);
   };
-  const hL=makeHandler('left'),hR=makeHandler('right');
-  btnL.addEventListener('touchstart',hL,{passive:false});
-  btnL.addEventListener('click',hL);
-  btnR.addEventListener('touchstart',hR,{passive:false});
-  btnR.addEventListener('click',hR);
+  btn.addEventListener('touchstart',handler,{passive:false});
+  btn.addEventListener('click',handler);
 }
 setupTouchZones();
 function onBellPress(e){if(e)e.preventDefault();if(state.phase==='waitBell'&&!state.bellPressed)handleBellPress(false);}
@@ -703,7 +699,12 @@ function handleBellPress(timeout){
   state.stopResults.push({stopIdx:state.curStopIdx,paxName:frontPax?frontPax.name:'-',correct,rank,points,ms:timeout?null:Math.round(Math.abs(diff))});
   renderScore();showStopResult(rank,title,timeout?'미반응':Math.round(Math.abs(diff))+'ms '+(diff>=0?'늦음':'빠름'),cls,correct);
   setTimeout(()=>{if(correct){state.passengers.shift();renderQueue();}else{state.passengers.push(state.passengers.shift());renderQueue();}},800);
-  setTimeout(()=>{hideStopResult();document.getElementById('bellOverlay').classList.remove('show');if(state.curStopIdx>=STOPS.length-1)endGame();else startMoving();},2200);
+  setTimeout(()=>{
+    hideStopResult();
+    document.getElementById('bellOverlay').classList.remove('show');
+    document.getElementById('nextPaxBtn').classList.remove('show');
+    if(state.curStopIdx>=STOPS.length-1)endGame();else startMoving();
+  },2200);
 }
 function showStopResult(rank,title,ms,cls,correct){
   const el=document.getElementById('stopResult');el.className=cls;
