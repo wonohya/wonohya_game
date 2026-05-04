@@ -29,14 +29,14 @@
 /* 모바일: 풀스크린, 보더/패딩 제거 */
 @media(min-width:641px){
   #queue{
-    gap:10px;
-    padding:0 14px 8px;
+    gap:10px !important;
+    padding:0 14px 8px !important;
   }
 
   .pax{
-    min-width:95px;
-    max-width:135px;
-    padding:9px 8px 10px;
+    min-width:95px !important;
+    max-width:135px !important;
+    padding:9px 8px 10px !important;
   }
 
   .pax .name{
@@ -53,12 +53,20 @@
   }
 
   .pax.front{
-    flex:1.25 1 0;
+    flex:1.25 1 0 !important;
   }
 }
 @media(max-width:640px){
-    body{padding:0;}
-    #wrap{max-width:100%;height:100dvh;max-height:100dvh;border:none;border-radius:0;box-shadow:none;}
+  body{padding:0;}
+  #wrap{
+    width:100%;
+    max-width:100%;
+    height:100dvh;
+    max-height:100dvh;
+    border:none;
+    border-radius:0;
+    box-shadow:none;
+  }
 }
   /* HUD */
   #hud{
@@ -968,7 +976,8 @@ function update(ts){
       state.redBellShown=true;
       document.getElementById('bell').classList.add('red');
       document.getElementById('bellSign').classList.add('red');
-      document.getElementById('bellSign').textContent='▶  문열기  ◀';
+      document.getElementById('bellSign').textContent='▶  지금 문열기  ◀';
+      document.getElementById('nextPaxBtn').textContent='지금 문열기';
       A.arrive();
     }
     if(state.redBellShown&&ts>state.perfectBellTime+3000)handleBellPress(true);
@@ -979,7 +988,7 @@ function arriveAtStop(){
   document.getElementById('moveHint').style.display='none';document.getElementById('nextStation').style.display='none';
   document.getElementById('tapZones').style.display='none';
 // 정차 단계에서도 버튼 유지 — 텍스트만 "벨 누르기"로 변경
-  document.getElementById('nextPaxBtn').textContent='⏰ 벨 누르기';
+  document.getElementById('nextPaxBtn').textContent='빨간불 대기 중';
   const delay=800+Math.random()*700;state.perfectBellTime=performance.now()+delay;state.redBellShown=false;state.bellPressed=false;
   setTimeout(()=>{
     state.phase='waitBell';
@@ -1019,7 +1028,16 @@ function setupTouchZones(){
   btn.addEventListener('click',handler);
 }
 setupTouchZones();
-function onBellPress(e){if(e)e.preventDefault();if(state.phase==='waitBell'&&!state.bellPressed)handleBellPress(false);}
+function onBellPress(e){
+  if(e)e.preventDefault();
+
+  // 빨간불이 켜지기 전에는 문열기 입력 무시
+  if(!state.redBellShown) return;
+
+  if(state.phase==='waitBell' && !state.bellPressed){
+    handleBellPress(false);
+  }
+}
 let swapLock=false;
 function dismissHint(){
   const hint=document.getElementById('moveHint');
