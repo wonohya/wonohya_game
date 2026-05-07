@@ -866,7 +866,7 @@ const ROUTES={
 const PAX_POOL=[
   {name:'서울이',type:'elder_f'},{name:'이주인',type:'elder_m'},{name:'김시민',type:'student'},
   {name:'하나씩',type:'office'},{name:'이지호',type:'parent'},{name:'김하윤',type:'student'},
-  {name:'이도윤',type:'elder_m'},{name:'착착!',type:'pregnant'},{name:'정원오',type:'kid'},
+  {name:'이도윤',type:'elder_m'},{name:'착착!',type:'pregnant'},{name:'정가든',type:'kid'},
   {name:'양시우',type:'parent'},{name:'강서연',type:'office'},{name:'양하은',type:'elder_f'},
 ];
 
@@ -1354,10 +1354,7 @@ function drawLandmark(landmark,ts){
     for(let wy=gy-80;wy<gy-20;wy+=14){for(let wx=x-36;wx<x+35;wx+=14){ctx.fillRect(wx,wy,10,10);}}
     ctx.fillStyle='#888';ctx.fillRect(x-24,gy-3,48,3);ctx.fillRect(x-20,gy-7,40,3);
     ctx.fillStyle='#2a3a4a';ctx.fillRect(x-14,gy-22,28,19);
-    ctx.fillStyle='#94a3b8';ctx.fillRect(x,gy-112,2,24);
-    ctx.fillStyle='#fff';ctx.fillRect(x+2,gy-110,18,12);ctx.strokeStyle='#888';ctx.lineWidth=1;ctx.strokeRect(x+2,gy-110,18,12);
-    ctx.fillStyle='#ef4444';ctx.beginPath();ctx.arc(x+11,gy-104,4,Math.PI,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#3b82f6';ctx.beginPath();ctx.arc(x+11,gy-104,4,0,Math.PI);ctx.fill();
+    
   }
   else if(landmark==='hospital'){
     ctx.fillStyle='#f8f8f8';ctx.fillRect(x-42,gy-84,84,84);
