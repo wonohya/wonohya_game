@@ -244,6 +244,10 @@
     border:2px solid #0f172a;border-radius:0;cursor:pointer;touch-action:manipulation;
     box-shadow:4px 4px 0 rgba(15,23,42,.22);transition:transform .08s,box-shadow .08s;
   }
+  .go-btn-home{
+    background:#fff7ed;
+    color:#0f172a;
+  }
   .go-btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.16);}
   .go-btn-share{background:#fbbf24;color:#0f172a;}
   .go-btn-sms{background:#22c55e;color:#fff;}
@@ -447,7 +451,8 @@
         <button class="go-btn go-btn-sms" id="smsBtn">내 동네 제안 보내기</button>
         <div class="go-note">보내주신 의견은 정책 검토 참고자료로 활용됩니다.</div>
         <button class="go-btn go-btn-share" id="shareBtn">결과 공유하기</button>
-        <button class="go-btn go-btn-restart" id="restartBtn">다시 시작하기</button>
+        <button class="go-btn go-btn-restart" id="restartBtn">다시 시작</button>
+        <button class="go-btn go-btn-home" id="homeBtn">공식 홈페이지로 이동</button>
       </div>
     </div>
   </div>
@@ -2319,7 +2324,7 @@ document.getElementById('shareBtn').addEventListener('click', ()=>{
   const text = `서울착착 러너 결과
   점수 ${String(score).padStart(6,'0')} · 최고 연속 통과 ${bestCombo}
   우리 동네에는 어떤 변화가 필요한가요?
-  https://www.seouljwo.kr`;
+  https://wonohya.github.io/wonohya_game/wonohya_run.html`;
   if(navigator.share){
     navigator.share({title:'서울착착 러너',text}).catch(()=>{});
   } else if(navigator.clipboard && navigator.clipboard.writeText){
@@ -2338,7 +2343,12 @@ document.getElementById('smsBtn')?.addEventListener('click', ()=>{
   location.href = isIOS ? `sms:01091038388&body=${body}` : `sms:01091038388?body=${body}`;
 });
 
-document.getElementById('restartBtn')?.addEventListener('click', ()=>{ startGame(); });
+document.getElementById('restartBtn')?.addEventListener('click', ()=>{
+  startGame();
+});
+document.getElementById('homeBtn')?.addEventListener('click', ()=>{
+  location.href = 'https://www.seouljwo.kr/';
+});
 /* =========================================================  UPDATE  */
 function update(dt=1){
   frame++; // 타이틀 화면에서도 애니메이션이 돌도록 위로 이동
@@ -2885,7 +2895,7 @@ let lastActionCueAt=0;
 let lastTextCycleTriggered=0;
 let seenActionCueKeys=new Set();
 
-function showActionCue(title, sub='', color='#fbbf24', freezeMs=90){
+function showActionCue(title, sub='', color='#fbbf24', freezeMs=90, tag=''){
   const el=document.getElementById('memeCut');
   if(!el)return;
 
@@ -2898,40 +2908,44 @@ function showActionCue(title, sub='', color='#fbbf24', freezeMs=90){
 
   const firstTime=!seenActionCueKeys.has(key);
   seenActionCueKeys.add(key);
-  // 첫 등장은 살짝 더 길게 멈춤 (학습 시간 확보)
+
   if(firstTime && freezeMs>0){
     actionCueFreezeUntil=Math.max(actionCueFreezeUntil, now+Math.min(freezeMs+30,120));
   }
 
+  const isMobileView = window.matchMedia('(max-width:700px), (pointer:coarse)').matches;
+
   el.innerHTML=`
     <div style="
-      font-size:${firstTime?28:20}px;
+      font-size:${isMobileView ? 15 : (firstTime ? 26 : 20)}px;
       line-height:1.05;
       font-weight:1000;
       color:#fff;
       letter-spacing:-0.05em;
       text-shadow:0 3px 6px rgba(0,0,0,.55);
     ">${title}</div>
-    ${sub?`<div style="
-      font-size:${firstTime?15:12}px;
+    ${sub && !isMobileView ? `<div style="
+      font-size:${firstTime ? 14 : 12}px;
       margin-top:6px;
       color:${color};
       font-weight:900;
       letter-spacing:.01em;
       text-shadow:0 2px 4px rgba(0,0,0,.4);
-    ">${sub}</div>`:''}
+    ">${sub}</div>` : ''}
   `;
 
-  el.style.top='14%';
+  el.style.top = isMobileView ? '7%' : '14%';
   el.style.color='#fff';
   el.style.background='rgba(15,23,42,.92)';
   el.style.textAlign='center';
-  el.style.padding=firstTime?'16px 24px 18px':'12px 18px 13px';
+  el.style.padding = isMobileView
+    ? '7px 10px 8px'
+    : (firstTime ? '16px 24px 18px' : '12px 18px 13px');
   el.style.border=`2.5px solid ${color}`;
   el.style.borderRadius='14px';
   el.style.boxShadow=`0 12px 28px rgba(15,23,42,.45), 0 0 14px ${color}`;
-  el.style.maxWidth='min(82vw,420px)';
-  el.style.minWidth='0';
+  el.style.maxWidth = isMobileView ? 'min(72vw,260px)' : 'min(82vw,420px)';
+  el.style.minWidth = '0';
 
   el.classList.remove('pop');
   void el.offsetWidth;
