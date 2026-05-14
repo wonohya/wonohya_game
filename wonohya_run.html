@@ -451,7 +451,7 @@
       </div>
     </div>
   </div>
-  <div id="mobileCtrl"><button id="tapBtn"><span class="tap-shell"><span class="tap-core"><span class="tap-main">탭해서 시작</span><span class="tap-sub">점프 · 2단 점프</span></span></span></button></div>
+    <div id="mobileCtrl"><button id="tapBtn"><span class="tap-shell"><span class="tap-core"><span class="tap-main">탭해서 시작</span><span class="tap-sub">차는 피하고 아이템은 모으기</span></span></span></button></div>
 </div>
 
 <!-- v10: 시민 문자 답장 미니게임 -->
@@ -2633,15 +2633,15 @@ function drawTitleScreen(){
   // top strip: badge | BEST
   ctx.fillStyle='#0f172a';roundRect(cardX+20,cardY+16,148,22,11);ctx.fill();
   ctx.fillStyle='#fb923c';ctx.font='bold 700 9px "Press Start 2P",monospace';ctx.textAlign='center';
-  ctx.fillText('SEOUL MINI RUN',cardX+94,cardY+30);
+  ctx.fillText('정원오 정책 게임',cardX+94,cardY+30);
   ctx.textAlign='right';
-  ctx.fillStyle='#94a3b8';ctx.font='bold 700 9px "Press Start 2P",monospace';ctx.fillText('YOUR BEST',cardX+cardW-22,cardY+24);
+  ctx.fillStyle='#94a3b8';ctx.font='bold 700 9px "Press Start 2P",monospace';ctx.fillText('최고 기록',cardX+cardW-22,cardY+24);
   ctx.fillStyle='#0f172a';ctx.font='bold 900 16px "Space Grotesk",sans-serif';ctx.fillText(String(hiScore).padStart(6,'0'),cardX+cardW-22,cardY+40);
 
   // LEFT: headline copy
   ctx.textAlign='left';
   ctx.fillStyle='#fb923c';ctx.font='bold 900 11px "Press Start 2P",monospace';
-  ctx.fillText('CITY · RUN · ACT',cardX+26,cardY+58);
+  ctx.fillText('원오런',cardX+26,cardY+58);
 
   ctx.fillStyle='#0f172a';ctx.font='900 22px "Noto Sans KR",sans-serif';
   ctx.fillText('도시를 넘고,',cardX+26,cardY+90);
@@ -2649,13 +2649,13 @@ function drawTitleScreen(){
   ctx.fillText('서울을 착착.',cardX+26,cardY+121);
 
   ctx.fillStyle='#334155';ctx.font='900 13px "Noto Sans KR",sans-serif';
-  ctx.fillText('장애물을 점프로 넘고,',cardX+26,cardY+155);
-  ctx.fillText('생활 변화 아이템을 모아',cardX+26,cardY+175);
-  ctx.fillText('우리 동네 제안으로 이어집니다.',cardX+26,cardY+195);
+  ctx.fillText('차만 점프로 피하세요.',cardX+26,cardY+155);
+  ctx.fillText('아이템을 모으면 성공버스 게이지가 차고,',cardX+26,cardY+175);
+  ctx.fillText('게이지가 차면 착착 질주합니다.',cardX+26,cardY+195);
 
   const guideX=cardX+26, guideY=cardY+228;
   ctx.fillStyle='#fb923c';ctx.font='900 13px "Noto Sans KR",sans-serif';
-  ctx.fillText('탭해서 점프하고, 아이템을 모으세요',guideX,guideY);
+  ctx.fillText('탭해서 차를 피하고, 아이템을 모으세요',guideX,guideY);
 
   // RIGHT: character frame — pulled left, taller for jump room
   ctx.save();
@@ -2701,7 +2701,6 @@ function drawTitleScreen(){
 
   ctx.restore();ctx.textAlign='left';
 }
-
 function drawIntroTutorialScreen(){
   drawBackground();
   const card=INTRO_TUTORIAL_CARDS[introTutorialIndex]||INTRO_TUTORIAL_CARDS[0];
@@ -3549,47 +3548,52 @@ function drawBus(){
 }
 
 const TEXT_SCENARIOS = [
-  {from:'학부모 김OO님',sub:'중계동 등굣길',
-   msgs:['시장님 학교 횡단보도가 너무 위험해요','차들이 안 멈춰서 매일 손에 땀을 쥐고 봐요'],
+  {from:'학부모 김시민님',sub:'등굣길 보행안전',
+   msgs:['학교 앞 횡단보도가 위험해요','차들이 잘 멈추지 않아 걱정됩니다'],
    options:[
-     {text:'등굣길 안전 점검 후 보행안전 대책을 검토하겠습니다',correct:true,reply:'등굣길 안전 제안으로 검토하겠습니다.'},
-     {text:'관련 부서에 전달해보겠습니다',correct:false,reply:'관련 부서에 전달해보겠습니다.'},
-     {text:'민원 접수 후 조금 더 지켜보겠습니다',correct:false,reply:'접수 후 추이를 보겠습니다.'},
+     {text:'등굣길 보행안전 개선 제안으로 검토하겠습니다',correct:true,reply:'등굣길 안전 제안으로 검토하겠습니다.'},
+     {text:'담당 부서 검토가 필요한 사안으로 전달하겠습니다',correct:false,reply:'담당 부서 검토가 필요한 사안으로 전달하겠습니다.'},
+     {text:'현장 상황을 확인한 뒤 검토하겠습니다',correct:false,reply:'현장 상황 확인이 필요한 사안입니다.'},
    ]},
-  {from:'직장인 이OO님',sub:'을지로 간접흡연 민원',
-   msgs:['점심마다 골목길 담배연기로 숨막혀요','스마트 흡연부스 같은 대책이 필요해요'],
+
+  {from:'직장인 이시민님',sub:'골목길 간접흡연',
+   msgs:['점심시간마다 골목길 담배연기가 불편해요','보행자가 편하게 다닐 수 있는 대책이 필요합니다'],
    options:[
-     {text:'보행량 많은 곳부터 보행환경 개선 대책을 검토하겠습니다',correct:true,reply:'보행환경 개선 제안으로 검토하겠습니다.'},
-     {text:'관련 부서에 전달해보겠습니다',correct:false,reply:'관련 부서에 전달하겠습니다.'},
-     {text:'조금 더 상황을 지켜보겠습니다',correct:false,reply:'상황을 조금 더 보겠습니다.'},
+     {text:'보행환경 개선 제안으로 검토하겠습니다',correct:true,reply:'보행환경 개선 제안으로 검토하겠습니다.'},
+     {text:'담당 부서 검토가 필요한 사안으로 전달하겠습니다',correct:false,reply:'담당 부서 검토가 필요한 사안으로 전달하겠습니다.'},
+     {text:'현장 여건을 확인한 뒤 검토하겠습니다',correct:false,reply:'현장 여건 확인이 필요한 사안입니다.'},
    ]},
-  {from:'어르신 박OO님',sub:'폭염 버스 정류장',
-   msgs:['버스 기다리다 쓰러질 뻔했어요','여름에 정류장이 너무 더워요'],
+
+  {from:'어르신 박서울님',sub:'폭염 버스정류장',
+   msgs:['버스를 기다릴 때 정류장이 너무 덥습니다','여름철 대기공간 개선이 필요해요'],
    options:[
-     {text:'폭염 취약 정류장부터 스마트쉼터 확대를 추진하겠습니다',correct:true,reply:'폭염 대응 쉼터 대책 추진하겠습니다.'},
-     {text:'관련 부서에 전달해보겠습니다',correct:false,reply:'관련 부서에 전달해보겠습니다.'},
-     {text:'상황을 조금 더 보겠습니다',correct:false,reply:'상황을 조금 더 보겠습니다.'},
+     {text:'폭염 취약 정류장 개선 제안으로 검토하겠습니다',correct:true,reply:'폭염 대응 정류장 개선 제안으로 검토하겠습니다.'},
+     {text:'담당 부서 검토가 필요한 사안으로 전달하겠습니다',correct:false,reply:'담당 부서 검토가 필요한 사안으로 전달하겠습니다.'},
+     {text:'이용 불편 사례로 검토하겠습니다',correct:false,reply:'정류장 이용 불편 사례로 검토하겠습니다.'},
    ]},
-  {from:'대학생 최OO님',sub:'심야 귀갓길',
-   msgs:['새벽에 집 가는 길이 너무 무서워요','안심 귀가 서비스가 있으면 좋겠어요'],
+
+  {from:'대학생 최서울님',sub:'심야 귀갓길',
+   msgs:['늦은 시간 집에 갈 때 길이 어두워 불안해요','안심하고 귀가할 수 있는 대책이 필요합니다'],
    options:[
-     {text:'안심귀가 서비스와 야간 안전 대책을 더 촘촘히 검토하겠습니다',correct:true,reply:'심야 귀갓길 안전 제안으로 검토하겠습니다.'},
-     {text:'관련 부서에 전달해보겠습니다',correct:false,reply:'관련 부서에 전달해보겠습니다.'},
-     {text:'개인적으로 더 조심 부탁드립니다',correct:false,reply:'개인 안전에 더 유의 부탁드립니다.'},
+     {text:'심야 귀갓길 안전 제안으로 검토하겠습니다',correct:true,reply:'심야 귀갓길 안전 제안으로 검토하겠습니다.'},
+     {text:'생활안전 개선이 필요한 사안으로 전달하겠습니다',correct:false,reply:'생활안전 개선이 필요한 사안으로 전달하겠습니다.'},
+     {text:'현장 여건을 확인한 뒤 검토하겠습니다',correct:false,reply:'현장 여건 확인이 필요한 사안입니다.'},
    ]},
-  {from:'청년 세입자 김OO님',sub:'전세사기 공포',
-   msgs:['전세 계약하다 사기 당할까봐 너무 불안해요','어디 믿을 데가 없어요'],
+
+  {from:'청년 세입자 김세입님',sub:'전월세 계약 불안',
+   msgs:['전월세 계약할 때 사기가 걱정됩니다','믿고 상담할 수 있는 창구가 있으면 좋겠어요'],
    options:[
-     {text:'전세사기 예방 지원과 전담 대응을 강화하겠습니다',correct:true,reply:'전세사기 예방·대응 강화하겠습니다.'},
-     {text:'계약 전에 더 확인해보셔야 합니다',correct:false,reply:'계약 전 확인을 부탁드립니다.'},
-     {text:'중개업소 선택을 더 신중히 해주세요',correct:false,reply:'중개업소 선택에 유의 부탁드립니다.'},
+     {text:'전월세 안심상담 지원 제안으로 검토하겠습니다',correct:true,reply:'전월세 안심상담 지원 제안으로 검토하겠습니다.'},
+     {text:'주거 상담 지원이 필요한 사안으로 전달하겠습니다',correct:false,reply:'주거 상담 지원이 필요한 사안으로 전달하겠습니다.'},
+     {text:'계약 안전 정보 제공 방안을 검토하겠습니다',correct:false,reply:'계약 안전 정보 제공 방안을 검토하겠습니다.'},
    ]},
-  {from:'직장인 정OO님',sub:'출퇴근 1시간 30분',
-   msgs:['매일 지하철 2번 갈아타고 1시간 반이에요','직장 근처에 공유오피스라도 있으면…'],
+
+  {from:'직장인 정호인님',sub:'긴 출퇴근 시간',
+   msgs:['매일 출퇴근 시간이 너무 깁니다','집 가까운 곳에서 일할 수 있는 선택지가 있으면 좋겠어요'],
    options:[
-     {text:'30분 통근 도시와 내집앞 공유오피스 확대를 추진하겠습니다',correct:true,reply:'출퇴근 부담 완화 대책 추진하겠습니다.'},
-     {text:'출퇴근 시간 조정을 권해드립니다',correct:false,reply:'출퇴근 시간 조정을 권해드립니다.'},
-     {text:'이동 경로를 바꿔보시는 건 어떨까요?',correct:false,reply:'이동 경로 변경을 먼저 권해드립니다.'},
+     {text:'출퇴근 부담 완화와 생활권 근무공간 제안으로 검토하겠습니다',correct:true,reply:'출퇴근 부담 완화 제안으로 검토하겠습니다.'},
+     {text:'교통·생활권 개선이 필요한 사안으로 전달하겠습니다',correct:false,reply:'교통·생활권 개선이 필요한 사안으로 전달하겠습니다.'},
+     {text:'이동 편의 개선 제안으로 검토하겠습니다',correct:false,reply:'이동 편의 개선 제안으로 검토하겠습니다.'},
    ]},
 ];
 let txtState=null;
